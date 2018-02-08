@@ -45,8 +45,13 @@ bcbf.predict(target)
 
 ## Challenge
 
-This algorithms were implemented during the ["Recommender System 2017 Challenge Polimi"](https://www.kaggle.com/c/recommender-system-2017-challenge-polimi) for the Recommender System Course at Politecnico di Milano.
+These algorithms were implemented during the ["Recommender System 2017 Challenge Polimi"](https://www.kaggle.com/c/recommender-system-2017-challenge-polimi) for the Recommender System Course at Politecnico di Milano.
+
+The task of the challenge was to predict what songs would be added to the users' playlists in the future.
+
 The classes and methods provided in the "challenge.py" and "preprocessing.py" refer to the preprocessing of the dataset and the predictions for the submission file.
+
+Given the characteristics of the challenge the algorithms implemented in the "recommender.py" file are intended for implicit feedback.
 
 More examples that use the challenge dataset can be found in the "examples.py" files.
 
@@ -65,9 +70,9 @@ The ratings obtained using this similarity are combined with the ratings obtaine
 
 ## Score
 
-The performance are evaluated with Mean Average Precision at 5.
+The performance is evaluated using Mean Average Precision at 5.
 
-The best model scored MAP5 = 0.10280
+The best model scored MAP@5 = 0.10280
 
 ## Model hyperparameters
 
