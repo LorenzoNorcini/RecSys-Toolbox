@@ -108,7 +108,7 @@ def test_Mixed_Hybrid():
     svd = sparse.load_npz('SVD_5000_knn_600.npz')
     als = sparse.load_npz('ALS_5000_knn_1000.npz')
 
-    bcbf = FullHybrid(user_rating_matrix=urm, slim_lr=lr, slim_epochs=e, slim_pir=pir, slim_nir=nir, slim_knn=knn_slim,
+    bcbf = MixedHybrid(user_rating_matrix=urm, slim_lr=lr, slim_epochs=e, slim_pir=pir, slim_nir=nir, slim_knn=knn_slim,
                       cbf_weight=al, cf_weight=be, als_weight=te, svd_weight=de, slim_weight=ga)
 
     print("Building Full Hybrid Similarity Matrix")
