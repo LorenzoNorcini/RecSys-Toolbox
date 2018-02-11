@@ -468,7 +468,7 @@ class SLIMBPR(Recommender):
 ##
 ## @brief      Class for cbfcb hybrid.
 ##
-class CBFCBHybrid(Recommender):
+class CBF_CB_Hybrid(Recommender):
 
     ##
     ## @brief      Constructs the object.
@@ -537,6 +537,97 @@ class CBFCBHybrid(Recommender):
             known_items = np.nonzero(target)[1]
             ratings[known_items] = 0
         return ratings
+
+##
+## @brief      Class for CBF CF SLIM BPR hybrid.
+##
+class CBF_CF_SLIMBPR_Hybrid(Recommender):
+
+    ##
+    ## @brief      Constructs the object.
+    ##
+    ## @param      self                The object
+    ## @param      user_rating_matrix  (numpy array) The user rating matrix
+    ## @param      slim_lr             (Float) Slim learning rate
+    ## @param      slim_epochs         (Integer) Number of slim epochs
+    ## @param      slim_pir            (Float) Slim positive item regularization
+    ## @param      slim_nir            (Float) Slim negative item regularization
+    ## @param      slim_knn            (Integer) Number of nearest neighbours of the slim similarity
+    ## @param      cbf_weight          (Float) The cbf weight
+    ## @param      cf_weight           (Float) The cf weight
+    ## @param      slim_weight         (Float) The slim weight
+    ##
+    def __init__(self, user_rating_matrix, slim_lr, slim_epochs, slim_pir, slim_nir,
+                 slim_knn, cbf_weight, cf_weight, slim_weight):
+        super().__init__(user_rating_matrix)
+        self.cbf_weight = cbf_weight
+        self.cf_weight = cf_weight
+        self.slim_weight = slim_weight
+        self.slim_knn = slim_knn
+        self.slim_bpr = SLIMBPR(self.urm, slim_lr, slim_epochs, slim_pir, slim_nir)
+        self.sm = None
+
+    ##
+    ## @brief      Fits the model computing the similarity between items according the weighted average of 
+    ##             the similarities computed according to the interactions and the similarities computed 
+    ##             according to their features also fits the slim bpr model
+    ##
+    ## @param      self                  The object
+    ## @param      item_content_matrix   (numpy array) The item content matrix
+    ## @param      k_nearest_neighbours  (Integer) The number of nearest neighbours
+    ##
+    ## @return     { description_of_the_return_value }
+    ##
+    def fit(self, item_content_matrix, k_nearest_neighbours):
+        self.sm = self._compute_similarity_matrix(item_content_matrix, k_nearest_neighbours)
+        self.slim_bpr.fit(self.slim_knn)
+
+    ##
+    ## @brief      Calculates the similarity matrix.
+    ##
+    ## @param      self  The object
+    ## @param      icm   The icm
+    ## @param      knn   The knn
+    ## @param      als   The als
+    ## @param      svd   The svd
+    ##
+    ## @return     The similarity matrix.
+    ##
+    def _compute_similarity_matrix(self, icm, knn):
+        s_tmp = []
+        ucm = self.urm.T
+        n_items = icm.shape[0]
+        m1 = icm.tocsr()
+        m1_t = m1.T.tocsr()
+        m2 = ucm.tocsr()
+        m2_t = m2.T.tocsr()
+        for i in tqdm(range(n_items)):
+            cfb_i = m1[i, :].dot(m1_t)
+            cf_i = m2[i, :].dot(m2_t)
+            mat = self.cbf_weight*cfb_i + self.cf_weight*cf_i
+            s_tmp.append(utils.knn(mat, knn))
+        s = sparse.vstack(s_tmp, format='csr')
+        s.setdiag(0)
+        return s
+
+    ##
+    ## @brief      Predicts the rating for the given target combining the slim ratings and the similairty hybrid ratings
+    ##
+    ## @param      self          The object
+    ## @param      target        (numpy array) The user vector of interactions
+    ## @param      remove_known  (Boolean) Whether to remove known interactions
+    ##
+    ## @return     (numpy array) The predicted ratings
+    ##
+    def predict(self, target, remove_known=True):
+        slim_ratings = self.slim_bpr.predict(target, False)
+        hybrid_ratings = (target * self.sm).toarray().flatten()
+        ratings = self.slim_weight * slim_ratings + (1. - self.slim_weight) * hybrid_ratings
+        if remove_known:
+            known_items = np.nonzero(target)[1]
+            ratings[known_items] = 0
+        return ratings
+
 
 ##
 ## @brief      Class for full hybrid.
